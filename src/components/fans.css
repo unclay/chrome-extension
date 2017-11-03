@@ -1,0 +1,24 @@
+.echarts-date-picker {
+  padding: 10px 0 0 10px;
+}
+.echarts-box {
+  position: relative;
+}
+.echarts-rightbar {
+  position: absolute;
+  top: 0;
+  left: 620px;
+  width: 88px;
+}
+.echarts-rightbar__item {
+  display: flex;
+  font-size: 12px;
+  height: 26px;
+  line-height: 26px;
+}
+.echarts-rightbar__item--title {
+  flex: 1;
+}
+.echarts-rightbar__item--value {
+  
+}
