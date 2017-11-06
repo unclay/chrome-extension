@@ -1,14 +1,16 @@
 <template>
   <div class="app">
-    <div class="data-box__hd">
-      <a @click="tabIndex = 0" :class="['nav-box__a', { active: tabIndex === 0 }]" href="javascript:;">粉丝趋势分析</a>
-      <a @click="tabIndex = 1" :class="['nav-box__a', { active: tabIndex === 1 }]" href="javascript:;">互动分析</a>
+    <a class="check-weibo" href="http://weibo.com" target="_blank">使用前请先登录微博</a>
+    <div class="data-box">
+      <div class="data-box__hd">
+        <a @click="tabIndex = 0" :class="['nav-box__a', { active: tabIndex === 0 }]" href="javascript:;">粉丝趋势分析</a>
+        <a @click="tabIndex = 1" :class="['nav-box__a', { active: tabIndex === 1 }]" href="javascript:;">互动分析</a>
+      </div>
+      <div class="data-box__bd">
+        <fans v-show="tabIndex === 0"></fans>
+        <interact v-show="tabIndex === 1"></interact>
+      </div>
     </div>
-    <div class="data-box__bd">
-      <fans v-show="tabIndex === 0"></fans>
-      <interact v-show="tabIndex === 1"></interact>
-    </div>
-    
   </div>
 </template>
 
@@ -38,6 +40,9 @@ export default {
 * {
   margin: 0;
   padding: 0;
+}
+.check-weibo {
+  padding: 10px;
 }
 .nav-box__a {
   position: relative;
