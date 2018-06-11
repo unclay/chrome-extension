@@ -89,6 +89,7 @@ export default {
   },
   mounted() {
     let end = parseInt(new Date().getTime() / 1000, 10);
+    end -= 86400;
     let start = end - (7 * 24 * 3600);
     start = new Date(start * 1000);
     end = new Date(end * 1000);
@@ -99,19 +100,19 @@ export default {
       const self = this;
       axios
         // http://dss.sc.weibo.com
-        .get(`${this.global.weiboApi}/aj/data/pc/fans_tread`, {
+        .get(`${this.global.weiboApi}/pc/aj/chart/fans/fansTrend`, {
           params: {
             starttime: start,
             endtime: end,
-            uid: this.global.weiboUid,
-            oauth_token: '',
+            // uid: this.global.weiboUid,
+            // oauth_token: '',
           },
         })
         .then((res) => {
           const data = res.data;
           // console.log(data);
           if (data.code === 100000) {
-            self.init(data.data);
+            self.init(data.data.chart);
           } else {
             // alert(JSON.stringify(data));
           }
@@ -123,12 +124,13 @@ export default {
     rightbar(data) {
       this.fansTotal = data;
     },
-    init(data) {
+    init(xdata) {
+      const data = xdata.fansTrend;
       const self = this;
       self.rightbar({
-        total: data.followers_count,
-        incr: data.followers_incr_count,
-        decr: data.followers_decr_count,
+        total: data.fansTotal,
+        incr: data.incrTotal,
+        decr: data.descTotal,
       });
       this.$nextTick(() => {
         if (!self.myChart) {
@@ -142,36 +144,49 @@ export default {
           粉丝减少率: false,
           // 主动取关粉丝数: false,
         };
-        const fansData = {
-          total: [],
-          incr: [],
-          incrRate: [],
-          decr: [],
-          decrRate: [],
-          unfollow: [],
-          // cur off
-          totalMax: 0,
-          incrMax: 0,
-          decrMax: 0,
-        };
+        // const fansData = {
+        //   total: [],
+        //   incr: [],
+        //   incrRate: [],
+        //   decr: [],
+        //   decrRate: [],
+        //   unfollow: [],
+        //   // cur off
+        //   totalMax: 0,
+        //   incrMax: 0,
+        //   decrMax: 0,
+        // };
+        const fansData = data;
         const xData = [];
-        const count = data.userInfo.followers_count;
+        // const count = data.fansTotal;
         const legends = Object.keys(legend);
-        for (let i = 0; i < data.list_data.length; i += 1) {
-          const incr = Number(data.list_data[i].followers_incr);
-          const decr = Number(data.list_data[i].followers_decr);
-          fansData.totalMax += (incr + decr);
-          fansData.incrMax += incr;
-          fansData.decrMax += decr;
-          xData.push(data.list_data[i].day);
-          fansData.incr.push(incr);
-          fansData.incrRate.push(Math.round((incr / count) * 10000) / 100);
-          fansData.decr.push(decr);
-          fansData.decrRate.push(Math.round((decr / count) * 10000) / 100);
-          fansData.total.push(fansData.totalMax);
+        const startTimestamp = parseInt(new Date(data.starttime).getTime() / 1000, 10);
+        for (let i = 0; i < data.incrTrend.length; i += 1) {
+        //   const incr = Number(data.list_data[i].followers_incr);
+        //   const decr = Number(data.list_data[i].followers_decr);
+        //   fansData.totalMax += (incr + decr);
+        //   fansData.incrMax += incr;
+        //   fansData.decrMax += decr;
+          const json = {
+            timestamp: startTimestamp + (i * 86400),
+          };
+          if (data.incrTrend.length <= 5) {
+            json.show = true;
+          } else if ((i + 3) % 5 === 0) {
+            json.show = true;
+          }
+          xData.push(JSON.stringify(json));
+        //   fansData.incr.push(incr);
+        //   fansData.incrRate.push(Math.round((incr / count) * 10000) / 100);
+        //   fansData.decr.push(decr);
+        //   fansData.decrRate.push(Math.round((decr / count) * 10000) / 100);
+        //   fansData.total.push(fansData.totalMax);
         }
-        let yMax = Math.max(data.followers_incr_count, data.followers_decr_count);
+        let yMax = Math.max(data.incrTotal, data.descTotal);
         yMax = self.rateMax(yMax);
+        const yInterval = self.rateNum(yMax);
+        // console.log(fansData.incrTrend);
+        // console.log(fansData.descTrend);
         const option = {
           tooltip: {
             trigger: 'axis',
@@ -180,13 +195,29 @@ export default {
               crossStyle: {
                 color: '#999',
               },
+              label: {
+                formatter(xcrossData) {
+                  if (typeof xcrossData.value === 'number') {
+                    return xcrossData.value.toFixed(2);
+                  }
+                  let xcrossDataJson;
+                  try {
+                    xcrossDataJson = JSON.parse(xcrossData.value);
+                  } catch (err) {
+                    xcrossDataJson = {};
+                  }
+                  return self.format(new Date(xcrossDataJson.timestamp * 1000), 'MM月dd日');
+                },
+              },
             },
             formatter(params) {
               let html = '';
               if (params && params.length > 0) {
-                html += params[0].axisValue;
+                html += self.format(new Date(JSON.parse(params[0].axisValue).timestamp * 1000), 'MM月dd日');
                 for (let i = 0; i < params.length; i += 1) {
-                  if (params[i].seriesName !== '粉丝总数') {
+                  if (params[i].seriesName === '粉丝增长率') {
+                    html += `<br/>${params[i].marker}${params[i].seriesName}: ${(params[i].value - yInterval).toFixed(2)}`;
+                  } else if (params[i].seriesName !== '粉丝总数') {
                     html += `<br/>${params[i].marker}${params[i].seriesName}: ${params[i].value}`;
                   }
                 }
@@ -211,8 +242,17 @@ export default {
             {
               type: 'category',
               data: xData,
-              axisPointer: {
-                type: 'shadow',
+              // axisPointer: {
+              //   type: 'shadow',
+              // },
+              axisLabel: {
+                formatter(xobjData) {
+                  const objData = JSON.parse(xobjData);
+                  if (objData.show) {
+                    return self.format(new Date(objData.timestamp * 1000), 'MM月dd日');
+                  }
+                  return '';
+                },
               },
             },
           ],
@@ -224,9 +264,9 @@ export default {
               min: 0,
               max: yMax,
               interval: self.rateNum(yMax),
-              axisLabel: {
-                formatter: '{value}',
-              },
+              // axisLabel: {
+              //   formatter: '{value}',
+              // },
             },
           ],
           series: [
@@ -252,23 +292,23 @@ export default {
             {
               name: '粉丝增加总数',
               type: 'bar',
-              data: fansData.incr,
+              data: fansData.incrTrend,
             },
             {
               name: '粉丝增长率',
               type: 'line',
-              data: fansData.incrRate,
+              data: fansData.incrRateTrend.map(item => (item + yInterval).toFixed(2)),
             },
             {
               name: '粉丝减少总数',
               type: 'bar',
-              data: fansData.decr,
+              data: fansData.descTrend,
             },
-            {
-              name: '粉丝减少率',
-              type: 'line',
-              data: [0, 0, 0, 0, 0, 0, 0],
-            },
+            // {
+            //   name: '粉丝减少率',
+            //   type: 'line',
+            //   data: [0, 0, 0, 0, 0, 0, 0],
+            // },
             // {
             //   name: '主动取关粉丝数',
             //   type: 'line',

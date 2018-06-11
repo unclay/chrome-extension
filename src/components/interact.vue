@@ -103,18 +103,26 @@ export default {
       const self = this;
       axios
         // http://dss.sc.weibo.com
-        .get(`${this.global.weiboApi}/aj/data/pc/interaction_total`, {
+        .get(`${this.global.weiboApi}/pc/aj/chart/article/articleInteractTrend`, {
           params: {
             starttime: start,
             endtime: end,
-            uid: this.global.weiboUid,
-            oauth_token: '',
+            // uid: this.global.weiboUid,
+            // oauth_token: '',
           },
         })
         .then((res) => {
           const data = res.data;
           if (data.code === 100000) {
-            self.init(data.data);
+            data.data.chart.articleInteractTrend.repostTrend = [1, 0, 1, 0, 0, 0, 0];
+            data.data.chart.articleInteractTrend.interTrend = [0, 1, 1, 0, 0, 0, 1];
+            data.data.chart.articleInteractTrend.commentTrend = [0, 1, 1, 0, 0, 1, 0];
+            data.data.chart.articleInteractTrend.likeTrend = [2, 1, 1, 2, 1, 1, 7];
+            data.data.chart.articleInteractTrend.repostTotal = 2;
+            data.data.chart.articleInteractTrend.interTotal = 3;
+            data.data.chart.articleInteractTrend.commentTotal = 3;
+            data.data.chart.articleInteractTrend.likeTotal = 15;
+            self.init(data.data.chart.articleInteractTrend);
           } else {
             // alert(JSON.stringify(data));
           }
@@ -129,10 +137,10 @@ export default {
     init(data) {
       const self = this;
       self.rightbar({
-        read: data.read_count,
-        reposted: data.reposted_count,
-        comment: data.comment_count,
-        like: data.like_count,
+        read: data.interTotal,
+        reposted: data.repostTotal,
+        comment: data.commentTotal,
+        like: data.likeTotal,
       });
       this.$nextTick(() => {
         if (!self.myChart) {
@@ -146,49 +154,36 @@ export default {
           // 粉丝减少率: false,
           // 主动取关粉丝数: false,
         };
-        const interactData = {
-          read: [],
-          reposted: [],
-          comment: [],
-          like: [],
-          // cur off
-          readMax: 0,
-          repostedMax: 0,
-          commentMax: 0,
-          likeMax: 0,
-        };
+        // const interactData = {
+        //   read: [],
+        //   reposted: [],
+        //   comment: [],
+        //   like: [],
+        //   // cur off
+        //   read: 0,
+        //   repostedMax: 0,
+        //   commentMax: 0,
+        //   likeMax: 0,
+        // };
+        const interactData = data;
         const xData = [];
         const legends = Object.keys(legend);
-        for (let i = 0; i < data.list_data.length; i += 1) {
-          const item = data.list_data[i];
-          // if (i === 4) {
-          //   item.comment = 26;
-          //   item.reposted = 7;
-          // }
-          // if (i === 3) {
-          //   item.reposted = 3;
-          // }
-          // if (i === 1) {
-          //   item.like = 2;
-          // }
-          // if (i === 6) {
-          //   item.read = 66;
-          // }
-          xData.push(item.day);
-          interactData.read.push(item.read);
-          interactData.reposted.push(item.reposted);
-          interactData.comment.push(item.comment);
-          interactData.like.push(item.like);
-          // max
-          interactData.readMax = Math.max(interactData.readMax, item.read);
-          interactData.repostedMax = Math.max(interactData.repostedMax, item.reposted);
-          interactData.commentMax = Math.max(interactData.commentMax, item.comment);
-          interactData.likeMax = Math.max(interactData.likeMax, item.like);
+        const startTimestamp = parseInt(new Date(data.starttime).getTime() / 1000, 10);
+        for (let i = 0; i < data.interTrend.length; i += 1) {
+          const json = {
+            timestamp: startTimestamp + (i * 86400),
+          };
+          if (data.interTrend.length <= 5) {
+            json.show = true;
+          } else if ((i + 3) % 5 === 0) {
+            json.show = true;
+          }
+          xData.push(JSON.stringify(json));
         }
-        const readMax = self.rateMax(interactData.readMax);
-        const readRate = self.rateNum(readMax);
-        let yMax = self.rateMax(Math.max(interactData.repostedMax, interactData.commentMax, interactData.likeMax));
-        yMax = self.rateBarMax(readMax, readRate, yMax);
+        const read = self.rateMax(interactData.interTotal);
+        const readRate = self.rateNum(read);
+        let yMax = self.rateMax(Math.max(interactData.repostTotal, interactData.commentTotal, interactData.likeTotal));
+        yMax = self.rateBarMax(read, readRate, yMax);
         const option = {
           tooltip: {
             trigger: 'axis',
@@ -197,11 +192,25 @@ export default {
               crossStyle: {
                 color: '#999',
               },
+              label: {
+                formatter(xcrossData) {
+                  if (typeof xcrossData.value === 'number') {
+                    return xcrossData.value.toFixed(2);
+                  }
+                  let xcrossDataJson;
+                  try {
+                    xcrossDataJson = JSON.parse(xcrossData.value);
+                  } catch (err) {
+                    xcrossDataJson = {};
+                  }
+                  return self.format(new Date(xcrossDataJson.timestamp * 1000), 'MM月dd日');
+                },
+              },
             },
             formatter(params) {
               let html = '';
               if (params && params.length > 0) {
-                html += params[0].axisValue;
+                html += self.format(new Date(JSON.parse(params[0].axisValue).timestamp * 1000), 'MM月dd日');
                 for (let i = 0; i < params.length; i += 1) {
                   if (params[i].seriesName !== '粉丝总数') {
                     html += `<br/>${params[i].marker}${params[i].seriesName}: ${params[i].value}`;
@@ -231,6 +240,15 @@ export default {
               axisPointer: {
                 type: 'shadow',
               },
+              axisLabel: {
+                formatter(xobjData) {
+                  const objData = JSON.parse(xobjData);
+                  if (objData.show) {
+                    return self.format(new Date(objData.timestamp * 1000), 'MM月dd日');
+                  }
+                  return '';
+                },
+              },
             },
           ],
           yAxis: [
@@ -238,7 +256,7 @@ export default {
               type: 'value',
               name: '阅读数',
               min: 0,
-              max: readMax,
+              max: read,
               interval: readRate,
               axisLabel: {
                 formatter: '{value}',
@@ -249,7 +267,7 @@ export default {
               name: '转评赞数',
               min: 0,
               max: yMax,
-              interval: yMax / (readMax / readRate),
+              interval: yMax / (read / readRate),
               axisLabel: {
                 formatter: '{value}',
               },
@@ -259,25 +277,25 @@ export default {
             {
               name: '阅读数',
               type: 'line',
-              data: interactData.read,
+              data: interactData.interTrend,
             },
             {
               name: '转发数',
               type: 'bar',
               yAxisIndex: 1,
-              data: interactData.reposted,
+              data: interactData.repostTrend,
             },
             {
               name: '评论数',
               type: 'bar',
               yAxisIndex: 1,
-              data: interactData.comment,
+              data: interactData.commentTrend,
             },
             {
               name: '点赞数',
               type: 'bar',
               yAxisIndex: 1,
-              data: interactData.like,
+              data: interactData.likeTrend,
             },
             // {
             //   name: '主动取关粉丝数',

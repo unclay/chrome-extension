@@ -57,102 +57,11 @@ Object.keys(proxyTable).forEach(function (context) {
     options = { target: options }
   }
   app.use(proxyMiddleware(options.filter || context, options))
-})
-app.use('/aj/data/pc/overview_fans', function (req, res) {
-  res.send({
-    "code": 100000,
-    "data": {
-    "userInfo": {
-    "uid": 1858805882,
-    "followers_count": 559,
-    "setTime": 1509531760521
-    },
-    "followers_incr_count": 2,
-    "followers_decr_count": 0,
-    "incr_rate": "100.0",
-    "decr_rate": 0,
-    "list_data": [
-    {
-    "day_key": "2017-10-25",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-26",
-    "followers_incr": "1",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-27",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-28",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-29",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-30",
-    "followers_incr": "1",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-31",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    }
-    ],
-    "list_data_pre": [
-    {
-    "day_key": "2017-10-18",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-19",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-20",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-21",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-22",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-23",
-    "followers_incr": "1",
-    "followers_decr": "0"
-    },
-    {
-    "day_key": "2017-10-24",
-    "followers_incr": "0",
-    "followers_decr": "0"
-    }
-    ]
-    },
-    "msg": "操作成功"
-    })
-})
+});
 
-app.use('/aj/*', async function (req, res) {
-    const result = await superagent.get(`http://dss.sc.weibo.com/aj/${req.params[0]}`).query(req.query).set({
-        'Cookie': 'SUB=_2A250_7eADeRhGedG7loZ8CvEwz6IHXVXjK5IrDV8PUNbmtBeLU77kW80Gkj4xycnfa7IBm6jHIK8GodQYQ..; ',
+app.use('/pc/*', async function (req, res) {
+    const result = await superagent.get(`https://dss.sc.weibo.com/pc/${req.params[0]}`).query(req.query).set({
+        'Cookie': 'SUB=_2A252GmlbDeRhGedG7loZ8CvEwz6IHXVVbt2TrDV8PUNbmtBeLXX7kW9NUQ_RBlb18qzoPyyBnlJdgoYGJylv30BG; ',
     }).send();
     res.json(result.body);
 })

@@ -17,7 +17,7 @@ Vue.mixin(mixinRate);
 Vue.prototype.global = {
   weiboApi: {
     development: '',
-    production: 'http://dss.sc.weibo.com',
+    production: 'https://dss.sc.weibo.com',
   }[process.env.NODE_ENV],
   weiboUid: 0,
 };

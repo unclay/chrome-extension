@@ -1,6 +1,6 @@
 {
-  "name": "chrome-extendsion1",
-  "version": "0.0.1",
+  "name": "chrome-extendsion",
+  "version": "0.2.0",
   "description": "A Vue.js project",
   "author": "Clay <wcl58981298@gmail.com>",
   "private": true,
