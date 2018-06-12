@@ -14,7 +14,7 @@
       </el-date-picker>
     </div>
     <div class="echarts-box">
-      <div id="main" style="width: 720px; height: 340px;"></div>
+      <div id="main" style="width: 730px; height: 340px;"></div>
       <div class="echarts-rightbar">
         <div class="echarts-rightbar__item">
           <div class="echarts-rightbar__item--title">粉丝总数</div>
@@ -110,7 +110,6 @@ export default {
         })
         .then((res) => {
           const data = res.data;
-          // console.log(data);
           if (data.code === 100000) {
             self.init(data.data.chart);
           } else {
@@ -182,9 +181,12 @@ export default {
         //   fansData.decrRate.push(Math.round((decr / count) * 10000) / 100);
         //   fansData.total.push(fansData.totalMax);
         }
-        let yMax = Math.max(data.incrTotal, data.descTotal);
+        let yMax = Math.max(this.arrMax(data.incrTrend), this.arrMax(data.descTrend));
         yMax = self.rateMax(yMax);
-        const yInterval = self.rateNum(yMax);
+        const yMaxPercent = this.rateMaxPercent(this.arrMax(data.incrRateTrend));
+        // let yMaxPercent = this.arrMax(data.incrRateTrend);
+        // yMaxPercent = self.rateMax(yMaxPercent);
+        // const yInterval = self.rateNum(yMax);
         // console.log(fansData.incrTrend);
         // console.log(fansData.descTrend);
         const option = {
@@ -216,7 +218,7 @@ export default {
                 html += self.format(new Date(JSON.parse(params[0].axisValue).timestamp * 1000), 'MM月dd日');
                 for (let i = 0; i < params.length; i += 1) {
                   if (params[i].seriesName === '粉丝增长率') {
-                    html += `<br/>${params[i].marker}${params[i].seriesName}: ${(params[i].value - yInterval).toFixed(2)}`;
+                    html += `<br/>${params[i].marker}${params[i].seriesName}: ${(params[i].value / yMaxPercent / yMax).toFixed(2)}`;
                   } else if (params[i].seriesName !== '粉丝总数') {
                     html += `<br/>${params[i].marker}${params[i].seriesName}: ${params[i].value}`;
                   }
@@ -235,7 +237,7 @@ export default {
           },
           grid: {
             top: 50,
-            left: 12,
+            left: 34,
             right: 130,
           },
           xAxis: [
@@ -257,6 +259,17 @@ export default {
             },
           ],
           yAxis: [
+            // {
+            //   position: 'left',
+            //   type: 'value',
+            //   name: '',
+            //   min: 0,
+            //   max: 0.1,
+            //   interval: 0.01,
+            //   // axisLabel: {
+            //   //   formatter: '{value}',
+            //   // },
+            // },
             {
               position: 'right',
               type: 'value',
@@ -270,38 +283,38 @@ export default {
             },
           ],
           series: [
-            {
-              name: '粉丝总数',
-              type: 'line',
-              // yAxisIndex: 0,
-              data: fansData.total,
-              // showSymbol: false,
-              // legendHoverLink: false,
-              // tooltip: {
-              //   position: [10, 10],
-              // },
-              // label: {
-              //   normal: {
-              //     show: false,
-              //   },
-              //   emphasis: {
-              //     show: false,
-              //   },
-              // },
-            },
+            // {
+            //   name: '粉丝总数',
+            //   type: 'line',
+            //   yAxisIndex: 1,
+            //   data: fansData.total,
+            //   // showSymbol: false,
+            //   // legendHoverLink: false,
+            //   // tooltip: {
+            //   //   position: [10, 10],
+            //   // },
+            //   // label: {
+            //   //   normal: {
+            //   //     show: false,
+            //   //   },
+            //   //   emphasis: {
+            //   //     show: false,
+            //   //   },
+            //   // },
+            // },
             {
               name: '粉丝增加总数',
-              type: 'bar',
+              type: 'line',
               data: fansData.incrTrend,
             },
             {
               name: '粉丝增长率',
               type: 'line',
-              data: fansData.incrRateTrend.map(item => (item + yInterval).toFixed(2)),
+              data: fansData.incrRateTrend.map(item => (item * yMaxPercent * yMax).toFixed(2)),
             },
             {
               name: '粉丝减少总数',
-              type: 'bar',
+              type: 'line',
               data: fansData.descTrend,
             },
             // {

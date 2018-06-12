@@ -1,5 +1,8 @@
 export default {
   methods: {
+    arrMax(arr) {
+      return arr.reduce((num1, max) => (num1 > max ? num1 : max), 0);
+    },
     rateMax(total) {
       const num = total + 1;
       if (num < 4) {
@@ -20,6 +23,26 @@ export default {
         return Math.ceil(num / 1000) * 1000;
       }
       return Math.ceil(num / 10000) * 10000;
+    },
+    rateMaxPercent(percent) {
+      if (percent < 0.1) {
+        return 1 / 0.1;
+      } else if (percent < 0.2) {
+        return 1 / 0.2;
+      } else if (percent < 0.3) {
+        return 1 / 0.3;
+      } else if (percent < 0.4) {
+        return 1 / 0.4;
+      } else if (percent < 0.5) {
+        return 1 / 0.5;
+      } else if (percent < 0.6) {
+        return 1 / 0.6;
+      } else if (percent < 0.7) {
+        return 1 / 0.7;
+      } else if (percent < 0.8) {
+        return 1 / 0.8;
+      }
+      return 1;
     },
     rateBarMax(total, rate, now) {
       const mutiple = total / rate;
