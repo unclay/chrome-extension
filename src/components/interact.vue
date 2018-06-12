@@ -114,14 +114,6 @@ export default {
         .then((res) => {
           const data = res.data;
           if (data.code === 100000) {
-            data.data.chart.articleInteractTrend.repostTrend = [1, 0, 1, 0, 0, 0, 0];
-            data.data.chart.articleInteractTrend.interTrend = [0, 1, 1, 0, 0, 0, 1];
-            data.data.chart.articleInteractTrend.commentTrend = [0, 1, 1, 0, 0, 1, 0];
-            data.data.chart.articleInteractTrend.likeTrend = [2, 1, 1, 2, 1, 1, 7];
-            data.data.chart.articleInteractTrend.repostTotal = 2;
-            data.data.chart.articleInteractTrend.interTotal = 3;
-            data.data.chart.articleInteractTrend.commentTotal = 3;
-            data.data.chart.articleInteractTrend.likeTotal = 15;
             self.init(data.data.chart.articleInteractTrend);
           } else {
             // alert(JSON.stringify(data));
