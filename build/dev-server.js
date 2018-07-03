@@ -61,7 +61,7 @@ Object.keys(proxyTable).forEach(function (context) {
 
 app.use('/pc/*', async function (req, res) {
     const result = await superagent.get(`https://dss.sc.weibo.com/pc/${req.params[0]}`).query(req.query).set({
-        'Cookie': 'SUB=_2A252GmlbDeRhGedG7loZ8CvEwz6IHXVVbt2TrDV8PUNbmtBeLXX7kW9NUQ_RBlb18qzoPyyBnlJdgoYGJylv30BG; ',
+        'Cookie': 'SUB=_2A252P1cMDeRhGedH61sS-SfKwj2IHXVVTc_ErDV_PUNbm9BeLVHSkW9NUPS9JBb2uA1P65YqZ1f-kDVbSOnCd_yT; ',
     }).send();
     res.json(result.body);
 })

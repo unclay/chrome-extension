@@ -3,6 +3,17 @@ export default {
     arrMax(arr) {
       return arr.reduce((num1, max) => (num1 > max ? num1 : max), 0);
     },
+    rate(number) {
+      const rate = Math.ceil(number / 3);
+      const numStr = rate.toString();
+      const length = numStr.length;
+      const base = 10 ** (length - 1);
+      if ((rate / base).toString().length === 1) {
+        return rate;
+      }
+      const firstNum = (rate + base).toString().substr(0, 1);
+      return firstNum * base;
+    },
     rateMax(total) {
       const num = total + 1;
       if (num < 4) {

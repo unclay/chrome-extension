@@ -18,20 +18,20 @@
       <div class="echarts-rightbar">
         <div class="echarts-rightbar__item">
           <div class="echarts-rightbar__item--title">阅读总数</div>
-          <div v-text="interactTotal.read"></div>
+          <div>{{ weiboReadTrend.readTotal | TotalFormat }}</div>
         </div>
         <div class="echarts-rightbar__item">
-          <div class="echarts-rightbar__item--title">转发总数</div>
-          <div v-text="interactTotal.reposted"></div>
+          <div class="echarts-rightbar__item--title">发博总数</div>
+          <div v-text="weiboReadTrend.weiboTotal"></div>
         </div>
-        <div class="echarts-rightbar__item">
+        <!-- <div class="echarts-rightbar__item">
           <div class="echarts-rightbar__item--title">评论总数</div>
-          <div v-text="interactTotal.comment"></div>
+          <div v-text="weiboReadTrend.comment"></div>
         </div>
         <div class="echarts-rightbar__item">
           <div class="echarts-rightbar__item--title">点赞总数</div>
-          <div v-text="interactTotal.like"></div>
-        </div>
+          <div v-text="weiboReadTrend.like"></div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -52,9 +52,17 @@ require('./fans.css');
 
 export default {
   name: 'Interact',
+  filters: {
+    TotalFormat(num) {
+      if (num && num > 10000) {
+        return `${(num * 0.0001).toFixed(2)}万`;
+      }
+      return num;
+    },
+  },
   data() {
     return {
-      interactTotal: {
+      weiboReadTrend: {
         read: 0,
         reposted: 0,
         comment: 0,
@@ -92,8 +100,8 @@ export default {
     };
   },
   mounted() {
-    let end = parseInt(new Date().getTime() / 1000, 10);
-    let start = end - (7 * 24 * 3600);
+    let end = parseInt(new Date().getTime() / 1000, 10) - 86400;
+    let start = end - (6 * 24 * 3600);
     start = new Date(start * 1000);
     end = new Date(end * 1000);
     this.load(this.format(start, 'yyyy-MM-dd'), this.format(end, 'yyyy-MM-dd'));
@@ -103,7 +111,7 @@ export default {
       const self = this;
       axios
         // http://dss.sc.weibo.com
-        .get(`${this.global.weiboApi}/pc/aj/chart/article/articleInteractTrend`, {
+        .get(`${this.global.weiboApi}/pc/aj/chart/content/weiboReadTrend`, {
           params: {
             starttime: start,
             endtime: end,
@@ -114,7 +122,7 @@ export default {
         .then((res) => {
           const data = res.data;
           if (data.code === 100000) {
-            self.init(data.data.chart.articleInteractTrend);
+            self.init(data.data.chart.weiboReadTrend);
           } else {
             // alert(JSON.stringify(data));
           }
@@ -124,15 +132,13 @@ export default {
         });
     },
     rightbar(data) {
-      this.interactTotal = data;
+      this.weiboReadTrend = data;
     },
     init(data) {
       const self = this;
       self.rightbar({
-        read: data.interTotal,
-        reposted: data.repostTotal,
-        comment: data.commentTotal,
-        like: data.likeTotal,
+        readTotal: data.readTotal,
+        weiboTotal: data.weiboTotal,
       });
       this.$nextTick(() => {
         if (!self.myChart) {
@@ -140,13 +146,13 @@ export default {
         }
         const legend = {
           阅读数: true,
-          转发数: true,
-          评论数: true,
-          点赞数: true,
+          发博数: true,
+          // 评论数: true,
+          // 点赞数: true,
           // 粉丝减少率: false,
           // 主动取关粉丝数: false,
         };
-        // const interactData = {
+        // const weiboReadTrendData = {
         //   read: [],
         //   reposted: [],
         //   comment: [],
@@ -157,25 +163,25 @@ export default {
         //   commentMax: 0,
         //   likeMax: 0,
         // };
-        const interactData = data;
+        const weiboReadTrendData = data;
         const xData = [];
         const legends = Object.keys(legend);
         const startTimestamp = parseInt(new Date(data.starttime).getTime() / 1000, 10);
-        for (let i = 0; i < data.interTrend.length; i += 1) {
+        for (let i = 0; i < data.reads.length; i += 1) {
           const json = {
             timestamp: startTimestamp + (i * 86400),
           };
-          if (data.interTrend.length <= 5) {
+          if (data.reads.length <= 5) {
             json.show = true;
           } else if ((i + 3) % 5 === 0) {
             json.show = true;
           }
           xData.push(JSON.stringify(json));
         }
-        const read = self.rateMax(interactData.interTotal);
-        const readRate = self.rateNum(read);
-        let yMax = self.rateMax(Math.max(interactData.repostTotal, interactData.commentTotal, interactData.likeTotal));
-        yMax = self.rateBarMax(read, readRate, yMax);
+        const read = Math.max(...data.reads);
+        const readRate = self.rate(read);
+        const yMax = readRate * 3;
+        console.log(read, readRate, yMax);
         const option = {
           tooltip: {
             trigger: 'axis',
@@ -222,7 +228,7 @@ export default {
           },
           grid: {
             top: 70,
-            left: 30,
+            left: 50,
             right: 130,
           },
           xAxis: [
@@ -248,18 +254,23 @@ export default {
               type: 'value',
               name: '阅读数',
               min: 0,
-              max: read,
-              interval: readRate,
+              max: self.rate(Math.max(...data.reads)) * 3,
+              interval: self.rate(Math.max(...data.reads)),
               axisLabel: {
-                formatter: '{value}',
+                formatter(value) {
+                  if (value > 1000) {
+                    return `${(value * 0.001)}k`;
+                  }
+                  return value / 100;
+                },
               },
             },
             {
               type: 'value',
-              name: '转评赞数',
+              name: '发博数',
               min: 0,
-              max: yMax,
-              interval: yMax / (read / readRate),
+              max: self.rate(Math.max(...data.weibos)) * 3,
+              interval: self.rate(Math.max(...data.weibos)),
               axisLabel: {
                 formatter: '{value}',
               },
@@ -269,26 +280,26 @@ export default {
             {
               name: '阅读数',
               type: 'line',
-              data: interactData.interTrend,
+              data: weiboReadTrendData.reads,
             },
             {
-              name: '转发数',
-              type: 'bar',
+              name: '发博数',
+              type: 'line',
               yAxisIndex: 1,
-              data: interactData.repostTrend,
+              data: weiboReadTrendData.weibos,
             },
-            {
-              name: '评论数',
-              type: 'bar',
-              yAxisIndex: 1,
-              data: interactData.commentTrend,
-            },
-            {
-              name: '点赞数',
-              type: 'bar',
-              yAxisIndex: 1,
-              data: interactData.likeTrend,
-            },
+            // {
+            //   name: '评论数',
+            //   type: 'bar',
+            //   yAxisIndex: 1,
+            //   data: weiboReadTrendData.commentTrend,
+            // },
+            // {
+            //   name: '点赞数',
+            //   type: 'bar',
+            //   yAxisIndex: 1,
+            //   data: weiboReadTrendData.likeTrend,
+            // },
             // {
             //   name: '主动取关粉丝数',
             //   type: 'line',
